@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "led1642gw_driver.h"
+
 #define GPIO0_ADDR        0x44E07000
 #define GPIO1_ADDR        0x4804C000
 #define GPIO2_ADDR        0x481AC000
@@ -36,6 +38,11 @@ int main(int argc, char** argv) {
     gpio1[GPIO_DATAOUT/4] ^= GPIO1_15;
     sleep(1);
   }
+
+  LED1642GW_Driver driver;
+  printf("Initialized LED1642GW driver.\n");
+
+  driver.write_all_brightness();
 
   return 0;
 }
