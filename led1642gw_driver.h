@@ -2,6 +2,7 @@
 #define __LED1642GW_DRIVER_H__
 
 #include <stdio.h>
+#include <time.h>
 
 #define GPIO0_ADDR        0x44E07000
 #define GPIO1_ADDR        0x4804C000
@@ -26,13 +27,19 @@
 // #define LE                1<<17
 
 #define SDI               USR0
+#define SDI_BAR           0xFFFFFFFF ^ SDI
 #define CLK               USR1
+#define CLK_BAR           0xFFFFFFFF ^ CLK
 #define LE                USR2
+#define LE_BAR           0xFFFFFFFF ^ LE
 
 class LED1642GW_Driver {
 public:
   LED1642GW_Driver()
-  : clock_period(250000) {
+  : clock_period(2) {
+    half_clock.tv_sec = 0;
+    half_clock.tv_nsec = clock_period / 2;
+
     // Turn off the triggers for the USR0-3 LEDs, so we can use them for
     // status.
     system("echo none > /sys/class/leds/beaglebone\\:green\\:usr0/trigger");
@@ -62,40 +69,52 @@ public:
 
   void write_all_brightness() {
     for (int i = 0; i < 16; i++) {
-      printf("Writing brightness value %d...\n", i);
       write_brightness(brightness[i], i == 15);
     }
   }
 
   void write_brightness(int data, bool global_latch) {
+    // The brightness data latch has to last 3-4 clock periods; the
+    // global data latch has to last 5-6 clock periods.
+    int le_periods = global_latch ? 5 : 3;
+
+    ulong dataout = gpio1[GPIO_DATAOUT/4];
+
+    // LE should fall at the start of the first bit period.
+    dataout &= LE_BAR;
+
     for (int i = 15; i >= 0; i--) {
-      printf("  Writing bit %d, value is %d\n", i, data & (1 << i));
-
+      // Set the SDI pin high or low for this bit.
       if (data & (1 << i)) {
-        gpio1[GPIO_DATAOUT/4] |= SDI;
+        dataout |= SDI;
       } else {
-        gpio1[GPIO_DATAOUT/4] &= (0xFFFFFFFF ^ SDI);
+        dataout &= SDI_BAR;
       }
 
-      if ((global_latch && i < 5) || (!global_latch && i < 3)) {
-        gpio1[GPIO_DATAOUT/4] |= LE;
+      
+      if (i == le_periods) {
+        dataout |= LE;
       }
 
-      gpio1[GPIO_DATAOUT/4] ^= CLK;
-      usleep(clock_period / 2);
-      gpio1[GPIO_DATAOUT/4] |= CLK;
-      usleep(clock_period / 2);
+      // Advance one clock period.
+      // TODO(wcraddock): this needs real timing.
+      dataout &= CLK_BAR;
+      gpio1[GPIO_DATAOUT/4] = dataout;
+      // nanosleep(&half_clock, NULL);
+
+      dataout |= CLK;
+      gpio1[GPIO_DATAOUT/4] = dataout;
+      // nanosleep(&half_clock, NULL);
     }
-
-    gpio1[GPIO_DATAOUT/4] ^= LE;
   }
 
   int brightness[16];
 
   int clock_period;
+  struct timespec half_clock;
 
   int mem_fd;
-  ulong* gpio1;
+  volatile ulong* gpio1;
 };
 
 #endif
