@@ -13,13 +13,9 @@ int main(int argc, char** argv) {
   LED1642GW_Driver driver;
   printf("Initialized LED1642GW driver.\n");
 
-  for (int i = 0; i < 16; ++i) {
-    driver.brightness[i] = 0x0000;
+  for (unsigned int i = 0; i < 16; ++i) {
+    driver.brightness[0] = 0x0000;  
   }
-
-  driver.brightness[0] = 0xFFFF;
-  driver.brightness[1] = 0x0000;
-  driver.brightness[2] = 0xAAAA;
 
   struct timespec begin, current;
   long long start, elapsed, microseconds;
@@ -31,7 +27,7 @@ int main(int argc, char** argv) {
   /* Start time in nanoseconds */
   start = begin.tv_sec*NANOS + begin.tv_nsec;
 
-  unsigned int iterations = 1000;
+  unsigned int iterations = 1;
   for (int i = 0; i < iterations; ++i) {
     driver.write_all_brightness();
   }

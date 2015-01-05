@@ -20,23 +20,21 @@
 #define USR2              1<<23
 #define USR3              1<<24
 
-#define GPIO1_15          1<<15
+#define GPIO1_13          1<<13 // SDI, white wire
+#define GPIO1_14          1<<14 // CLK, yellow wire
+#define GPIO1_15          1<<15 // LE, green wire
 
-// #define SDI               1<<15
-// #define CLK               1<<16
-// #define LE                1<<17
-
-#define SDI               USR0
+#define SDI               GPIO1_13
 #define SDI_BAR           0xFFFFFFFF ^ SDI
-#define CLK               USR1
+#define CLK               GPIO1_14
 #define CLK_BAR           0xFFFFFFFF ^ CLK
-#define LE                USR2
-#define LE_BAR           0xFFFFFFFF ^ LE
+#define LE                GPIO1_15
+#define LE_BAR            0xFFFFFFFF ^ LE
 
 class LED1642GW_Driver {
 public:
   LED1642GW_Driver()
-  : clock_period(2) {
+  : clock_period(20000) {
     half_clock.tv_sec = 0;
     half_clock.tv_nsec = clock_period / 2;
 
@@ -61,10 +59,29 @@ public:
     gpio1[GPIO_DATAOUT/4] |= SDI;
     gpio1[GPIO_DATAOUT/4] |= CLK;
     gpio1[GPIO_DATAOUT/4] |= LE;
+
+    // test_signals();
   }
 
   ~LED1642GW_Driver() {
     close(mem_fd);
+  }
+
+  void test_signals() {
+    printf("Testing signals...\n");
+
+    for (unsigned int i = 0; i < 10; ++i) {
+      ulong dataout = gpio1[GPIO_DATAOUT/4];
+
+      dataout ^= SDI;
+      dataout ^= LE;
+      dataout ^= CLK;
+
+      printf("  toggled\n");
+      gpio1[GPIO_DATAOUT/4] = dataout;
+
+      sleep(1);
+    }
   }
 
   void write_all_brightness() {
@@ -99,11 +116,11 @@ public:
       // TODO(wcraddock): this needs real timing.
       dataout &= CLK_BAR;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      // nanosleep(&half_clock, NULL);
+      nanosleep(&half_clock, NULL);
 
       dataout |= CLK;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      // nanosleep(&half_clock, NULL);
+      nanosleep(&half_clock, NULL);
     }
   }
 
