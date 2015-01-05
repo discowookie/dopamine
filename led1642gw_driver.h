@@ -91,7 +91,6 @@ public:
         dataout &= SDI_BAR;
       }
 
-      
       if (i == le_periods) {
         dataout |= LE;
       }
