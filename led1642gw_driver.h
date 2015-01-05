@@ -92,6 +92,9 @@ public:
 
   void write_all_brightness() {
     for (int i = 0; i < num_channels; i++) {
+      // TODO(wcraddock): I'm not exactly sure when the global latch should
+      // be delivered -- once at the end of the entire 48-channel write, or
+      // at the end of each chip's worth (16 channels)?
       bool global_latch = (i % 15 == 0);
       printf("Writing channel %d = %4x with global_latch %d\n",
              i, brightness[i], global_latch);
