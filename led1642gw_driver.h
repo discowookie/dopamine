@@ -34,7 +34,10 @@
 class LED1642GW_Driver {
 public:
   LED1642GW_Driver()
-  : clock_period(20000) {
+  : clock_period(20000),
+    num_channels(48) {
+    brightness = new int[num_channels];
+
     half_clock.tv_sec = 0;
     half_clock.tv_nsec = clock_period / 2;
 
@@ -65,6 +68,9 @@ public:
 
   ~LED1642GW_Driver() {
     close(mem_fd);
+
+    // TODO(wcraddock): Use smart pointers.
+    delete [] brightness;
   }
 
   void test_signals() {
@@ -85,8 +91,11 @@ public:
   }
 
   void write_all_brightness() {
-    for (int i = 0; i < 16; i++) {
-      write_brightness(brightness[i], i == 15);
+    for (int i = 0; i < num_channels; i++) {
+      bool global_latch = (i % 15 == 0);
+      printf("Writing channel %d = %4x with global_latch %d\n",
+             i, brightness[i], global_latch);
+      write_brightness(brightness[i], global_latch);
     }
   }
 
@@ -124,7 +133,8 @@ public:
     }
   }
 
-  int brightness[16];
+  int num_channels;
+  int* brightness;
 
   int clock_period;
   struct timespec half_clock;

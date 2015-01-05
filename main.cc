@@ -13,8 +13,12 @@ int main(int argc, char** argv) {
   LED1642GW_Driver driver;
   printf("Initialized LED1642GW driver.\n");
 
-  for (unsigned int i = 0; i < 16; ++i) {
-    driver.brightness[0] = 0x0000;  
+  int num_channels = 48;
+  for (unsigned int i = 0; i < num_channels; ++i) {
+    if ((i % 16) % 3 == 0)
+      driver.brightness[i] = 0xFFFF;
+    else
+      driver.brightness[i] = 0x0000;
   }
 
   struct timespec begin, current;
