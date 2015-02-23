@@ -33,13 +33,26 @@
 
 class LED1642GW_Driver {
 public:
-  LED1642GW_Driver()
-  : clock_period(20000),
-    num_channels(48) {
-    brightness = new int[num_channels];
+  enum class DigitalKeys {
+    WriteSwitch = 2,
+    BrightnessDataLatch = 4,
+    BrightnessGlobalLatch = 6,
+    WriteConfigurationRegister = 7,
+    ReadConfigurationRegister = 8,
+    StartOpenErrorDetectionMode = 9,
+    StartShortErrorDetectionMode = 10,
+    StartCombinedErrorDetectionMode = 11,
+    EndErrorDetectionMode = 12,
+    ThermalErrorReading = 13
+  };
 
-    half_clock.tv_sec = 0;
-    half_clock.tv_nsec = clock_period / 2;
+  LED1642GW_Driver(int clock_period, int num_channels)
+  : clock_period_(clock_period),
+    num_channels_(num_channels) {
+    brightness_ = new int[num_channels_];
+
+    half_clock_.tv_sec = 0;
+    half_clock_.tv_nsec = clock_period / 2;
 
     // Turn off the triggers for the USR0-3 LEDs, so we can use them for
     // status.
@@ -53,24 +66,29 @@ public:
     gpio1 =  (ulong*) mmap(
       NULL, GPIO_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, mem_fd, GPIO1_ADDR);
 
+    // Set all of the outputs high.
+    gpio1[GPIO_DATAOUT/4] |= SDI;
+    gpio1[GPIO_DATAOUT/4] |= CLK;
+    gpio1[GPIO_DATAOUT/4] |= LE;
+
     // Make the three serial pins outputs by setting their output enables low.
     gpio1[GPIO_OE/4] = 0xFFFFFFFF;
     gpio1[GPIO_OE/4] ^=  SDI;
     gpio1[GPIO_OE/4] ^=  CLK;
     gpio1[GPIO_OE/4] ^=  LE;
 
-    gpio1[GPIO_DATAOUT/4] |= SDI;
-    gpio1[GPIO_DATAOUT/4] |= CLK;
-    gpio1[GPIO_DATAOUT/4] |= LE;
-
     // test_signals();
+    
+    // Turn on all of the outputs.
+    printf("Turning on all outputs...\n");
+    turn_on_all_outputs();
   }
 
   ~LED1642GW_Driver() {
     close(mem_fd);
 
     // TODO(wcraddock): Use smart pointers.
-    delete [] brightness;
+    delete [] brightness_;
   }
 
   void test_signals() {
@@ -90,22 +108,35 @@ public:
     }
   }
 
+  void turn_on_all_outputs() {
+    // printf("Writing %4x with latch_periods %d\n", 0xFFFF, 2);
+    write_brightness(0xFFFF, 2);
+  }
+
+  void write_configuration_register(int value) {
+    printf("Writing %04x with latch_periods %d\n", value, 7);
+    write_brightness(value, 7);
+  }
+
   void write_all_brightness() {
-    for (int i = 0; i < num_channels; i++) {
+    for (int i = 0; i < num_channels_; i++) {
       // TODO(wcraddock): I'm not exactly sure when the global latch should
       // be delivered -- once at the end of the entire 48-channel write, or
       // at the end of each chip's worth (16 channels)?
-      bool global_latch = (i % 15 == 0);
-      printf("Writing channel %d = %4x with global_latch %d\n",
-             i, brightness[i], global_latch);
-      write_brightness(brightness[i], global_latch);
+      // bool global_latch = (i % 15 == 0);
+      bool global_latch = (i == num_channels_ - 1);
+      // bool global_latch = 1;
+      int latch_periods = global_latch ? 5 : 3;
+      // printf("Writing channel %d = %4x with latch_periods %d\n",
+      //        i, brightness_[i], latch_periods);
+      write_brightness(brightness_[i], latch_periods);
     }
   }
 
-  void write_brightness(int data, bool global_latch) {
+  void write_brightness(int data, int latch_periods) {
     // The brightness data latch has to last 3-4 clock periods; the
     // global data latch has to last 5-6 clock periods.
-    int le_periods = global_latch ? 5 : 3;
+    // int le_periods = global_latch ? 5 : 3;
 
     ulong dataout = gpio1[GPIO_DATAOUT/4];
 
@@ -120,7 +151,7 @@ public:
         dataout &= SDI_BAR;
       }
 
-      if (i == le_periods) {
+      if (i == latch_periods) {
         dataout |= LE;
       }
 
@@ -128,19 +159,33 @@ public:
       // TODO(wcraddock): this needs real timing.
       dataout &= CLK_BAR;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      nanosleep(&half_clock, NULL);
+      nanosleep(&half_clock_, NULL);
 
       dataout |= CLK;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      nanosleep(&half_clock, NULL);
+      nanosleep(&half_clock_, NULL);
     }
   }
 
-  int num_channels;
-  int* brightness;
+  void run_clock_forever() {
+    while(1) {
+      ulong dataout = gpio1[GPIO_DATAOUT/4];
 
-  int clock_period;
-  struct timespec half_clock;
+      dataout &= CLK_BAR;
+      gpio1[GPIO_DATAOUT/4] = dataout;
+      nanosleep(&half_clock_, NULL);
+
+      dataout |= CLK;
+      gpio1[GPIO_DATAOUT/4] = dataout;
+      nanosleep(&half_clock_, NULL);
+    }
+  }
+
+  int num_channels_;
+  int* brightness_;
+
+  int clock_period_;
+  struct timespec half_clock_;
 
   int mem_fd;
   volatile ulong* gpio1;

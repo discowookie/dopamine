@@ -10,16 +10,29 @@
 #define NANOS 1000000000LL
 
 int main(int argc, char** argv) {
-  LED1642GW_Driver driver;
+  int clock_period = 20000;
+  int num_channels = 16;
+
+  LED1642GW_Driver driver(clock_period, num_channels);
   printf("Initialized LED1642GW driver.\n");
 
-  int num_channels = 48;
   for (unsigned int i = 0; i < num_channels; ++i) {
-    if ((i % 16) % 3 == 0)
-      driver.brightness[i] = 0xFFFF;
+    // if ((i % 16) % 3 == 0)
+    //   driver.brightness[i] = 0xFFFF;
+    // else
+    //   driver.brightness[i] = 0x0000;
+    if (i < 16)
+      driver.brightness_[i] = 0xFFFF;
     else
-      driver.brightness[i] = 0x0000;
+      driver.brightness_[i] = 0x0000;
   }
+
+  // driver.brightness[0] = 0xFFFF;
+  // driver.brightness[16] = 0xFFFF;
+  // driver.brightness[32] = 0xFFFF;
+  
+  driver.write_configuration_register(0x7f);
+  driver.turn_on_all_outputs();
 
   struct timespec begin, current;
   long long start, elapsed, microseconds;
@@ -31,7 +44,7 @@ int main(int argc, char** argv) {
   /* Start time in nanoseconds */
   start = begin.tv_sec*NANOS + begin.tv_nsec;
 
-  unsigned int iterations = 1;
+  unsigned int iterations = 100;
   for (int i = 0; i < iterations; ++i) {
     driver.write_all_brightness();
   }
@@ -47,6 +60,9 @@ int main(int argc, char** argv) {
 
   printf("Wrote all brightness values %d times; took %f microseconds each\n",
          iterations, float(microseconds) / iterations);
+
+  printf("Running clock forever...\n");
+  driver.run_clock_forever();
 
   return 0;
 }
