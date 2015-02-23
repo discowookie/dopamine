@@ -168,9 +168,12 @@ public:
   }
 
   void run_clock_forever() {
-    while(1) {
-      ulong dataout = gpio1[GPIO_DATAOUT/4];
+    ulong dataout = gpio1[GPIO_DATAOUT/4];
 
+    // Make sure LE is always high.
+    dataout |= LE;
+
+    while(1) {
       dataout &= CLK_BAR;
       gpio1[GPIO_DATAOUT/4] = dataout;
       // nanosleep(&half_clock_, NULL);

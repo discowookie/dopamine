@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   // driver.brightness[16] = 0xFFFF;
   // driver.brightness[32] = 0xFFFF;
   
-  driver.write_configuration_register(0x7f);
+  driver.write_configuration_register(0x807f);
   driver.turn_on_all_outputs();
 
   struct timespec begin, current;
