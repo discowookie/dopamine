@@ -159,11 +159,11 @@ public:
       // TODO(wcraddock): this needs real timing.
       dataout &= CLK_BAR;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      nanosleep(&half_clock_, NULL);
+      // nanosleep(&half_clock_, NULL);
 
       dataout |= CLK;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      nanosleep(&half_clock_, NULL);
+      // nanosleep(&half_clock_, NULL);
     }
   }
 
@@ -173,11 +173,11 @@ public:
 
       dataout &= CLK_BAR;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      nanosleep(&half_clock_, NULL);
+      // nanosleep(&half_clock_, NULL);
 
       dataout |= CLK;
       gpio1[GPIO_DATAOUT/4] = dataout;
-      nanosleep(&half_clock_, NULL);
+      // nanosleep(&half_clock_, NULL);
     }
   }
 

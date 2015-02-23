@@ -10,7 +10,7 @@
 #define NANOS 1000000000LL
 
 int main(int argc, char** argv) {
-  int clock_period = 20000;
+  int clock_period = 10;
   int num_channels = 16;
 
   LED1642GW_Driver driver(clock_period, num_channels);
@@ -22,12 +22,12 @@ int main(int argc, char** argv) {
     // else
     //   driver.brightness[i] = 0x0000;
     if (i < 16)
-      driver.brightness_[i] = 0xFFFF;
+      driver.brightness_[i] = 0x1FFF;
     else
       driver.brightness_[i] = 0x0000;
   }
 
-  // driver.brightness[0] = 0xFFFF;
+  // driver.brightness[0] = 0xFFFFF
   // driver.brightness[16] = 0xFFFF;
   // driver.brightness[32] = 0xFFFF;
   
