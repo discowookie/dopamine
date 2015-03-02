@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <math.h>
 
 #include "led1642gw_driver.h"
 
@@ -44,13 +45,13 @@ int main(int argc, char** argv) {
   /* Start time in nanoseconds */
   start = begin.tv_sec*NANOS + begin.tv_nsec;
 
-  unsigned int iterations = 100;
+  int iterations = 0xFFFF;
   for (int i = 0; i < iterations; ++i) {
     for (int b = 0; b < driver.num_channels_; ++b) {
-      driver.brightness_[b] = (i % 2 == 0) ? 0x0FFF : 0x0000;
+      driver.brightness_[b] = 0x07FF + 0x07FF * sin((float) i / 15.0);
     }
     
-    printf("Writing all brightnesses, %04x\n", driver.brightness_[0]);
+    // printf("Writing all brightnesses, %04x\n", driver.brightness_[0]);
 
     for (int j = 0; j < 2; j++){
       // driver.write_configuration_register(0x807f);
@@ -58,7 +59,8 @@ int main(int argc, char** argv) {
       driver.write_all_brightness();
     }
 
-    driver.run_clock(3330000);
+    // Wait one frame time, about 30 ms.
+    driver.run_clock(100000);
   }
 
   /* get elapsed time */
