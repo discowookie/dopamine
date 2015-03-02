@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
     // else
     //   driver.brightness[i] = 0x0000;
     if (i < 16)
-      driver.brightness_[i] = 0x1FFF;
+      driver.brightness_[i] = 0x07FF;
     else
       driver.brightness_[i] = 0x0000;
   }
@@ -46,7 +46,19 @@ int main(int argc, char** argv) {
 
   unsigned int iterations = 100;
   for (int i = 0; i < iterations; ++i) {
-    driver.write_all_brightness();
+    for (int b = 0; b < driver.num_channels_; ++b) {
+      driver.brightness_[b] = (i % 2 == 0) ? 0x0FFF : 0x0000;
+    }
+    
+    printf("Writing all brightnesses, %04x\n", driver.brightness_[0]);
+
+    for (int j = 0; j < 2; j++){
+      // driver.write_configuration_register(0x807f);
+      // driver.turn_on_all_outputs();
+      driver.write_all_brightness();
+    }
+
+    driver.run_clock(3330000);
   }
 
   /* get elapsed time */
@@ -58,9 +70,9 @@ int main(int argc, char** argv) {
   elapsed = current.tv_sec*NANOS + current.tv_nsec - start;
   microseconds = elapsed / 1000 + (elapsed % 1000 >= 500); // round up halves
 
-  printf("Wrote all brightness values %d times; took %f microseconds each\n",
-         iterations, float(microseconds) / iterations);
-
+  // printf("Wrote all brightness values %d times; took %f microseconds each\n",
+  //        iterations, float(microseconds) / iterations);
+  
   printf("Running clock forever...\n");
   driver.run_clock_forever();
 

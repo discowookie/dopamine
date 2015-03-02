@@ -167,13 +167,13 @@ public:
     }
   }
 
-  void run_clock_forever() {
+  void run_clock(int count) {
     ulong dataout = gpio1[GPIO_DATAOUT/4];
 
     // Make sure LE is always high.
     dataout |= LE;
 
-    while(1) {
+    for (int i = 0; i < count; i++) {
       dataout &= CLK_BAR;
       gpio1[GPIO_DATAOUT/4] = dataout;
       // nanosleep(&half_clock_, NULL);
@@ -183,6 +183,24 @@ public:
       // nanosleep(&half_clock_, NULL);
     }
   }
+
+  void run_clock_forever() {
+    ulong dataout = gpio1[GPIO_DATAOUT/4];
+
+    // Make sure LE is always high.
+    dataout |= LE;
+
+    while (1) {
+      dataout &= CLK_BAR;
+      gpio1[GPIO_DATAOUT/4] = dataout;
+      // nanosleep(&half_clock_, NULL);
+
+      dataout |= CLK;
+      gpio1[GPIO_DATAOUT/4] = dataout;
+      // nanosleep(&half_clock_, NULL);
+    }
+  }
+
 
   int num_channels_;
   int* brightness_;
