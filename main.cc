@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     // else
     //   driver.brightness[i] = 0x0000;
     if (i < 16)
-      driver.brightness_[i] = 0x07FF;
+      driver.brightness_[i] = 0x0000;
     else
       driver.brightness_[i] = 0x0000;
   }
@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
   // driver.brightness[16] = 0xFFFF;
   // driver.brightness[32] = 0xFFFF;
   
-  driver.write_configuration_register(0x807f);
+  driver.write_configuration_register(0x803f);
   driver.turn_on_all_outputs();
 
   struct timespec begin, current;
@@ -45,11 +45,26 @@ int main(int argc, char** argv) {
   /* Start time in nanoseconds */
   start = begin.tv_sec*NANOS + begin.tv_nsec;
 
+  float red_period = float(rand() % 15);
+  float red_offset = float(rand() % 32767) / 32767.0;
+  float green_period = float(rand() % 15);
+  float green_offset = float(rand() % 32767) / 32767.0;
+  float blue_period = float(rand() % 15);
+  float blue_offset = float(rand() % 32767) / 32767.0;
+
+  const int red_channel = 15;
+  const int green_channel = 14;
+  const int blue_channel = 13;
+  const int midscale = 0x07FF;
+
   int iterations = 0xFFFF;
   for (int i = 0; i < iterations; ++i) {
-    for (int b = 0; b < driver.num_channels_; ++b) {
-      driver.brightness_[b] = 0x07FF + 0x07FF * sin((float) i / 15.0);
-    }
+    driver.brightness_[red_channel] =
+      midscale + midscale * sin((float) i / red_period + red_offset);
+    driver.brightness_[green_channel] =
+      midscale + midscale * sin((float) i / green_period + green_offset);
+    driver.brightness_[blue_channel] =
+      midscale + midscale * sin((float) i / blue_period + blue_offset);
     
     // printf("Writing all brightnesses, %04x\n", driver.brightness_[0]);
 
