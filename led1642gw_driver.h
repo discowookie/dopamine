@@ -76,8 +76,6 @@ public:
     gpio1[GPIO_OE/4] ^=  SDI;
     gpio1[GPIO_OE/4] ^=  CLK;
     gpio1[GPIO_OE/4] ^=  LE;
-
-    // test_signals();
     
     // Turn on all of the outputs.
     printf("Turning on all outputs...\n");
@@ -109,7 +107,6 @@ public:
   }
 
   void turn_on_all_outputs() {
-    // printf("Writing %4x with latch_periods %d\n", 0xFFFF, 2);
     write_brightness(0xFFFF, 2);
   }
 
@@ -120,15 +117,8 @@ public:
 
   void write_all_brightness() {
     for (int i = 0; i < num_channels_; i++) {
-      // TODO(wcraddock): I'm not exactly sure when the global latch should
-      // be delivered -- once at the end of the entire 48-channel write, or
-      // at the end of each chip's worth (16 channels)?
-      // bool global_latch = (i % 15 == 0);
       bool global_latch = (i == num_channels_ - 1);
-      // bool global_latch = 1;
       int latch_periods = global_latch ? 5 : 3;
-      // printf("Writing channel %d = %4x with latch_periods %d\n",
-      //        i, brightness_[i], latch_periods);
       write_brightness(brightness_[i], latch_periods);
     }
   }

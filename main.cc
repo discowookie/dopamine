@@ -18,39 +18,25 @@ int main(int argc, char** argv) {
   printf("Initialized LED1642GW driver.\n");
 
   for (unsigned int i = 0; i < num_channels; ++i) {
-    // if ((i % 16) % 3 == 0)
-    //   driver.brightness[i] = 0xFFFF;
-    // else
-    //   driver.brightness[i] = 0x0000;
-    if (i < 16)
-      driver.brightness_[i] = 0x0000;
-    else
-      driver.brightness_[i] = 0x0000;
+    driver.brightness_[i] = 0x0000;
   }
 
-  // driver.brightness[0] = 0xFFFFF
-  // driver.brightness[16] = 0xFFFF;
-  // driver.brightness[32] = 0xFFFF;
-  
   driver.write_configuration_register(0x803f);
   driver.turn_on_all_outputs();
 
   struct timespec begin, current;
   long long start, elapsed, microseconds;
-  /* set up start time data */
   if (clock_gettime(USED_CLOCK, &begin)) {
-      /* Oops, getting clock time failed */
       exit(EXIT_FAILURE);
   }
-  /* Start time in nanoseconds */
   start = begin.tv_sec*NANOS + begin.tv_nsec;
 
-  float red_period = float(rand() % 15);
-  float red_offset = float(rand() % 32767) / 32767.0;
-  float green_period = float(rand() % 15);
-  float green_offset = float(rand() % 32767) / 32767.0;
-  float blue_period = float(rand() % 15);
-  float blue_offset = float(rand() % 32767) / 32767.0;
+  const float red_period = float(rand() % 15);
+  const float red_offset = float(rand() % 32767) / 32767.0;
+  const float green_period = float(rand() % 15);
+  const float green_offset = float(rand() % 32767) / 32767.0;
+  const float blue_period = float(rand() % 15);
+  const float blue_offset = float(rand() % 32767) / 32767.0;
 
   const int red_channel = 15;
   const int green_channel = 14;
@@ -66,11 +52,7 @@ int main(int argc, char** argv) {
     driver.brightness_[blue_channel] =
       midscale + midscale * sin((float) i / blue_period + blue_offset);
     
-    // printf("Writing all brightnesses, %04x\n", driver.brightness_[0]);
-
     for (int j = 0; j < 2; j++){
-      // driver.write_configuration_register(0x807f);
-      // driver.turn_on_all_outputs();
       driver.write_all_brightness();
     }
 
@@ -78,17 +60,11 @@ int main(int argc, char** argv) {
     driver.run_clock(100000);
   }
 
-  /* get elapsed time */
   if (clock_gettime(USED_CLOCK, &current)) {
-      /* getting clock time failed, what now? */
       exit(EXIT_FAILURE);
   }
-  /* Elapsed time in nanoseconds */
   elapsed = current.tv_sec*NANOS + current.tv_nsec - start;
   microseconds = elapsed / 1000 + (elapsed % 1000 >= 500); // round up halves
-
-  // printf("Wrote all brightness values %d times; took %f microseconds each\n",
-  //        iterations, float(microseconds) / iterations);
   
   printf("Running clock forever...\n");
   driver.run_clock_forever();
